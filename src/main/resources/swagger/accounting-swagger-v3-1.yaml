@@ -1,0 +1,52 @@
+openapi: 3.1.0
+info:
+  title: An example
+
+  version: "1.0"
+servers:
+  - url: "http://localhost:8080/"
+    description: "Development server"
+tags:
+  - name: position
+paths:
+
+  /api/cbs/accounting/v1/position:
+    get:
+      tags:
+        - position
+      operationId: getPosition
+      parameters:
+        - $ref: 'common-swagger-v3-1.yaml#/components/parameters/accountId'
+        - name: positionDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          example: '2024-01-05'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PositionReadDto'
+        400:
+          $ref: 'common-swagger-v3-1.yaml#/components/responses/BadRequest'
+        404:
+          $ref: 'common-swagger-v3-1.yaml#/components/responses/NotFound'
+        default:
+          $ref: 'common-swagger-v3-1.yaml#/components/responses/Default'
+
+components:
+  schemas:
+    PositionReadDto:
+      type: object
+      required:
+        - account
+        - businessDate
+      properties:
+        date:
+          $ref: 'common-swagger-v3-1.yaml#/components/schemas/common.Date'
+        marketValue:
+          $ref: 'common-swagger-v3-1.yaml#/components/schemas/common.AmountDto'

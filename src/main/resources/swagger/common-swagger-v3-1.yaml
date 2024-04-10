@@ -1,0 +1,87 @@
+openapi: 3.1.0
+info:
+  title: CBS Common component
+  version: "1.0"
+
+paths: {}
+
+components:
+  schemas:
+
+    common.Tsid:
+      type: string
+      format: b32
+      example: 0FHP0N1QTKMBS
+
+    common.Quantity:
+      example: "100.40"
+      type: string
+      format: number
+
+    common.Date:
+      type: string
+      format: date
+      example: "2021-01-30"
+
+    common.AmountDto:
+      type: object
+      required: [ quantity, currencyIso ]
+      properties:
+        quantity:
+          $ref: "#/components/schemas/common.Quantity"
+        currencyIso:
+          $ref: "#/components/schemas/common.IsoCode"
+
+    common.IsoCode:
+      example: "CHF"
+      type: string
+      minLength: 3
+      maxLength: 3
+
+
+    common.ErrorDto:
+      description: Generic container for errors
+      example: {
+        "errorCode": "ErrorCode",
+        "errorMessage": "Error message",
+        "errorDetails": "Error details",
+        "correlationId": "08d3b3e0-a300-4fac-9837-dd8c2fd1e899"
+      }
+      properties:
+        errorCode:
+          type: string
+        errorMessage:
+          type: string
+        errorDetails:
+          type: string
+        correlationId:
+          type: string
+
+  parameters:
+    accountId:
+      in: query
+      name: accountId
+      required: true
+      schema:
+        $ref: '#/components/schemas/common.Tsid'
+
+
+  responses:
+    Default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/common.ErrorDto'
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/common.ErrorDto'
+    NotFound:
+      description: Nothing found...
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/common.ErrorDto'

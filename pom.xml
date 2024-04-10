@@ -93,6 +93,18 @@
                             <inputSpec>${project.basedir}/src/main/resources/swagger/accounting-swagger-v3-0.yaml</inputSpec>
                         </configuration>
                     </execution>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <id>API 3.1.0</id>
+                        <configuration>
+                            <apiPackage>net.kernevez.generated.v3-1.api</apiPackage>
+                            <modelPackage>net.kernevez.generated.v3-1.dto</modelPackage>
+                            <invokerPackage>net.kernevez.generated.v3-1.invoker</invokerPackage>
+                            <inputSpec>${project.basedir}/src/main/resources/swagger/accounting-swagger-v3-1.yaml</inputSpec>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 
