@@ -1,0 +1,82 @@
+openapi: 3.0.3
+info:
+  title: An example
+
+  version: "1.0"
+servers:
+  - url: "http://localhost:8080/"
+    description: "Development server"
+tags:
+  - name: position
+paths:
+
+  /api/cbs/accounting/v1/position:
+    get:
+      tags:
+        - position
+      operationId: getPosition
+      parameters:
+        - $ref: 'common-swagger-v3-0.yaml#/components/parameters/accountId'
+        - name: positionDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          example: '2024-01-05'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PositionReadDto'
+        400:
+          $ref: 'common-swagger-v3-0.yaml#/components/responses/BadRequest'
+        404:
+          $ref: 'common-swagger-v3-0.yaml#/components/responses/NotFound'
+        default:
+          $ref: 'common-swagger-v3-0.yaml#/components/responses/Default'
+
+components:
+  schemas:
+    PositionReadDto:
+      description:
+        The position of an account for a given date.\
+        The total market value is reported in the currency of the account.\
+        Whether the data is reported from a client or an accounting point of view depends on which API was called
+      type: object
+      required:
+        - account
+        - holdings
+        - businessDate
+      properties:
+        account:
+          $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.EmbeddedAccountReadDto'
+        holdings:
+          type: array
+          items:
+            "$ref": "common-swagger-v3-0.yaml#/components/schemas/common.AccountValuedHoldingReadDto"
+        businessDate:
+          allOf:
+            - $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.Date'
+          description: businessDate of this position
+        cobTime:
+          allOf:
+            - $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.DateTime'
+          description: time of the COB process that captured this position, null if this is not a SnapshotPosition (current date)
+        marketValue:
+          $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.AmountDto'
+
+
+    AccountTransactionDetailsReadDto:
+      type: object
+      required: [ id, description, holding ]
+      properties:
+        id:
+          $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.Tsid'
+        description:
+          type: string
+          example: "Transaction Fees"
+        holding:
+          $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.HoldingReadDto'

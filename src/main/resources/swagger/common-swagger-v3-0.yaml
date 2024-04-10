@@ -1,0 +1,386 @@
+openapi: 3.0.3
+info:
+  title: CBS Common component
+  version: "1.0"
+
+paths: {}
+
+components:
+  schemas:
+    common.Updatable:
+      type: object
+      required: [ id, updatedAt ]
+      properties:
+        id:
+          $ref: '#/components/schemas/common.Tsid'
+        updatedAt:
+          # Not embedding datetime on purpose to have another description
+          description: |
+            Last time the entity was updated. \
+            \
+            This is also the "versioning" key that is used to know if a writer can update an entity. \
+            On reading an updatable entity, this version is passed. \
+            On updating an entity, the version MUST be passed back. If the record has changed between the read and the write request, the update will be rejected
+          type: string
+          format: date-time
+          example: "2021-01-30T08:30:00Z"
+
+    common.Tsid:
+      type: string
+      format: b32
+      example: 0FHP0N1QTKMBS
+      description: Shift technical identifier of an entity
+
+    common.DateTime:
+      description: Represents an instant
+      type: string
+      format: date-time
+      example: "2021-01-30T08:30:00Z"
+
+    common.Quantity:
+      description: Represents a bank quantity (expresses with a BigDecimal), like the Amount.quantity or Price.quantity
+      example: "100.40"
+      type: string
+      format: number
+
+    common.PositiveQuantity:
+      description: Represents a bank strictly positive quantity (expresses with a BigDecimal), like the FxRate.quantity.
+      example: "100.40"
+      type: string
+      format: number
+      minimum: 0
+      exclusiveMinimum: true
+
+    common.Date:
+      description: Represents a local day (without time or timezone), understood in the reference of the bank
+      type: string
+      format: date
+      example: "2021-01-30"
+
+    common.AmountDto:
+      description: Represents an Amount (a quantity of a given currency)
+      type: object
+      required: [ quantity, currencyIso ]
+      properties:
+        quantity:
+          $ref: "#/components/schemas/common.Quantity"
+        currencyIso:
+          $ref: "#/components/schemas/common.IsoCode"
+
+    common.PositiveAmountDto:
+      description: Represents an strictly positive Amount (a quantity of a given currency)
+      type: object
+      required: [ quantity, currencyIso ]
+      properties:
+        quantity:
+          $ref: "#/components/schemas/common.PositiveQuantity"
+        currencyIso:
+          $ref: "#/components/schemas/common.IsoCode"
+
+    common.HoldingReadDto:
+      description: |
+        A quantity of instrument held
+      type: object
+      required:
+        - instrument
+        - quantity
+      properties:
+        instrument:
+          $ref: '#/components/schemas/common.EmbeddedInstrumentReadDto'
+        quantity:
+          $ref: "#/components/schemas/common.Quantity"
+
+    common.AccountValuedHoldingReadDto:
+      description: |
+        A quantity of instrument held, with an optional valuation.
+        Valuations, when available, are reported in instrument currency and in account currency.
+      allOf:
+        - $ref: '#/components/schemas/common.HoldingReadDto'
+        - type: object
+          properties:
+            marketValueInInstrumentCurrency:
+              $ref: '#/components/schemas/common.AmountDto'
+            marketValueInAccountCurrency:
+              $ref: '#/components/schemas/common.AmountDto'
+
+    common.HoldingUpdateDto:
+      description: |
+        A quantity of instrument held, used to create a new entity
+      type: object
+      required:
+        - instrument
+        - quantity
+      properties:
+        instrument:
+          $ref: '#/components/schemas/common.RefInstrumentDto'
+        quantity:
+          $ref: "#/components/schemas/common.Quantity"
+
+    common.IsoCode:
+      description: Iso code of the amount following the ISO 4217 standard.
+      example: "CHF"
+      type: string
+      minLength: 3
+      maxLength: 3
+
+    common.pageNumber:
+      description: Number of the page to return, starting at 0.
+      type: integer
+      format: int32
+      example: 0
+      default: 0
+      minimum: 0
+
+    common.pageSize:
+      description: Size of the page
+      type: integer
+      format: int32
+      example: 10
+      default: 10
+      maximum: 50
+      minimum: 1
+
+    common.PriceReadDto:
+      description: Represents a Price for reading (a quantity of a given currency per unit of instrument)
+      type: object
+      required: [ quantity, currencyIso ] # Instrument is not required as it might be provided by context
+      properties:
+        quantity:
+          $ref: "#/components/schemas/common.Quantity"
+        currencyIso:
+          description: Iso code of the price following the ISO 4217 standard.
+          example: "CHF"
+          type: string
+          minLength: 3
+          maxLength: 3
+        instrument:
+          $ref: '#/components/schemas/common.EmbeddedInstrumentReadDto'
+
+    common.PriceUpdateDto:
+      description: Represents a Price for updating (a quantity of a given currency per unit of instrument)
+      type: object
+      required: [ quantity, currencyIso ] # When instrument is null, the Mapper have to provide an instrument from the context
+      # See com.or.shift.cbs.api.v1.mapper.OperationMapper#toSecurityBuy(...) to see an example
+      properties:
+        quantity:
+          $ref: "#/components/schemas/common.Quantity"
+        currencyIso:
+          description: Iso code of the price following the ISO 4217 standard.
+          example: "CHF"
+          type: string
+          minLength: 3
+          maxLength: 3
+        instrument:
+          $ref: '#/components/schemas/common.RefInstrumentDto'
+
+    # These DTO are here and not in core or account because some things in common (here) depends on them (e.g. PriceReadDto)
+    # If it's put in core, there is some kind of cycle that results in 2 java classes being generated (one suffixed with `1`) which we
+    # do not want
+    common.EmbeddedInstrumentReadDto:
+      description: |
+        A summarized view of an instrument included for reference inside other linked resources
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          $ref: '#/components/schemas/common.Tsid'
+        name:
+          type: string
+          example: IBM
+        masterDataId:
+          type: string
+          example: EQ_123
+
+    AccountTypesDto:
+      example: "CLIENT"
+      type: string
+      enum: [ CLIENT, NOSTRO, SECURITY_CUSTODY, INSTITUTION_CAPITAL, PNL, PNL_FX ]
+    common.EmbeddedAccountReadDto:
+      description: |
+        A summarized view of an account included for reference inside other linked resources.
+      required: [ id, accountNumber ]
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/common.Tsid'
+        accountNumber:
+          example: "NOSTRO_USD1A"
+          type: string
+        type:
+          $ref: '#/components/schemas/AccountTypesDto'
+
+    common.RefAccountDto:
+      description: |
+        Used to identify an account to use in a request with any one of it's identifiers. \
+        A single identifier can be passed and is enough.\
+        If multiple identifiers are passed, they must correspond to the same Account, otherwise an error is returned.\
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/common.Tsid'
+        accountNumber:
+          example: "NOSTRO_USD1A"
+          type: string
+
+    common.RefInstrumentDto:
+      description: |
+        Used to identify an instrument to use in a request with any one of it's identifiers. \
+        A single identifier can be passed and is enough.\
+        If multiple identifiers are passed, they must correspond to the same Instrument, otherwise an error is returned.\
+        Note that the currencyIsoCode identifier applies only to instrument of type currency.
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/common.Tsid'
+        name:
+          example: "IBM"
+          type: string
+        currencyIsoCode:
+          example: "CHF"
+          type: string
+          minLength: 3
+          maxLength: 3
+        masterDataId:
+          type: string
+          example: EQ_123
+
+    common.Paginated:
+      description: Represents a paginated response
+      type: object
+      required: [ pageNumber, pageSize, totalElements ]
+      properties:
+        pageNumber:
+          example: 3
+          type: integer
+          format: int32
+        pageSize:
+          example: 20
+          type: integer
+          format: int32
+        totalElements:
+          example: 95
+          type: integer
+          format: int32
+
+    common.ErrorDto:
+      description: Generic container for errors
+      example: {
+        "errorCode": "ErrorCode",
+        "errorMessage": "Error message",
+        "errorDetails": "Error details",
+        "correlationId": "08d3b3e0-a300-4fac-9837-dd8c2fd1e899"
+      }
+      properties:
+        errorCode:
+          type: string
+        errorMessage:
+          type: string
+        errorDetails:
+          type: string
+        correlationId:
+          type: string
+
+  parameters:
+    pageNumber:
+      in: query
+      name: pageNumber
+      description: Number of the page to return, starting at 0.
+      required: false
+      schema:
+        type: integer
+        format: int32
+        example: 0
+        default: 0
+        minimum: 0
+    pageSize:
+      in: query
+      name: pageSize
+      description: Size of the page
+      required: false
+      schema:
+        type: integer
+        format: int32
+        example: 10
+        default: 10
+        maximum: 50
+        minimum: 1
+    accountId:
+      in: query
+      name: accountId
+      description: Account Identifier
+      required: true
+      schema:
+        $ref: '#/components/schemas/common.Tsid'
+    instrumentId:
+      in: query
+      name: instrumentId
+      description: Instrument Identifier
+      required: true
+      schema:
+        $ref: '#/components/schemas/common.Tsid'
+
+    dateTimeFrom:
+      in: query
+      name: dateFrom
+      schema:
+        type: string
+        format: date-time
+        example: "2021-01-30T08:30:00Z"
+    dateTimeTo:
+      in: query
+      name: dateTo
+      schema:
+        type: string
+        format: date-time
+        example: "2021-01-30T08:30:00Z"
+    dateFrom:
+      in: query
+      name: dateFrom
+      description: starting date, in the reference of the bank (included). Default value = Today.
+      schema:
+        type: string
+        format: date
+        example: "2021-01-30"
+    dateTo:
+      in: query
+      name: dateTo
+      description: ending date, in the reference of the bank (included). Default value = Today.
+      schema:
+        type: string
+        format: date
+        example: "2021-01-30"
+    id:
+      name: id
+      in: path
+      description: id of the resource
+      required: true
+      schema:
+        $ref: '#/components/schemas/common.Tsid'
+
+  responses:
+    Default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/common.ErrorDto'
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/common.ErrorDto'
+    NotFound:
+      description: Nothing found...
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/common.ErrorDto'
+    Conflict:
+      description: Conflict error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/common.ErrorDto'
