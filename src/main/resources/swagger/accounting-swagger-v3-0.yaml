@@ -41,42 +41,12 @@ paths:
 components:
   schemas:
     PositionReadDto:
-      description:
-        The position of an account for a given date.\
-        The total market value is reported in the currency of the account.\
-        Whether the data is reported from a client or an accounting point of view depends on which API was called
       type: object
       required:
         - account
-        - holdings
         - businessDate
       properties:
-        account:
-          $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.EmbeddedAccountReadDto'
-        holdings:
-          type: array
-          items:
-            "$ref": "common-swagger-v3-0.yaml#/components/schemas/common.AccountValuedHoldingReadDto"
-        businessDate:
-          allOf:
-            - $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.Date'
-          description: businessDate of this position
-        cobTime:
-          allOf:
-            - $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.DateTime'
-          description: time of the COB process that captured this position, null if this is not a SnapshotPosition (current date)
+        date:
+          $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.Date'
         marketValue:
           $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.AmountDto'
-
-
-    AccountTransactionDetailsReadDto:
-      type: object
-      required: [ id, description, holding ]
-      properties:
-        id:
-          $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.Tsid'
-        description:
-          type: string
-          example: "Transaction Fees"
-        holding:
-          $ref: 'common-swagger-v3-0.yaml#/components/schemas/common.HoldingReadDto'

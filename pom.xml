@@ -45,11 +45,6 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-testcontainers</artifactId>
-			<scope>test</scope>
-		</dependency>
     </dependencies>
 
 	<build>
@@ -90,7 +85,7 @@
                         <goals>
                             <goal>generate</goal>
                         </goals>
-                        <id>Accounting API</id>
+                        <id>API 3.0.4</id>
                         <configuration>
                             <apiPackage>net.kernevez.generated.v3-0.api</apiPackage>
                             <modelPackage>net.kernevez.generated.v3-0.dto</modelPackage>
